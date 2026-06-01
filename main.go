@@ -60,7 +60,6 @@ func main() {
 	mux := http.NewServeMux()
 	mux.HandleFunc("GET /", s.handleIndex)
 	mux.HandleFunc("GET /photo", s.handlePhoto)
-	mux.HandleFunc("GET /next", s.handleNext)
 
 	log.Printf("listening on %s  photos=%s  state=%s", listenAddr, photosDir, stateFile)
 	log.Fatal(http.ListenAndServe(listenAddr, mux))
@@ -73,6 +72,7 @@ func (s *server) handleIndex(w http.ResponseWriter, r *http.Request) {
 
 func (s *server) handlePhoto(w http.ResponseWriter, r *http.Request) {
 	s.mu.Lock()
+	s.advance()
 	path := s.currentPath()
 	s.mu.Unlock()
 
@@ -81,15 +81,6 @@ func (s *server) handlePhoto(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	http.ServeFile(w, r, path)
-}
-
-func (s *server) handleNext(w http.ResponseWriter, r *http.Request) {
-	s.mu.Lock()
-	s.advance()
-	s.mu.Unlock()
-
-	w.Header().Set("Content-Type", "application/json")
-	json.NewEncoder(w).Encode(map[string]string{"src": "/photo"})
 }
 
 func (s *server) currentPath() string {
@@ -272,18 +263,13 @@ const indexHTML = `<!DOCTYPE html>
 
   async function advance() {
     const back = front === 'a' ? 'b' : 'a';
+    const backImg = document.getElementById('img-' + back);
     try {
-      const res = await fetch('/next');
-      if (!res.ok) return;
-      const { src } = await res.json();
-
-      const backImg = document.getElementById('img-' + back);
       await new Promise((resolve, reject) => {
         backImg.onload  = resolve;
         backImg.onerror = reject;
-        backImg.src = src + '?t=' + Date.now();
+        backImg.src = '/photo?t=' + Date.now();
       });
-
       document.getElementById(back).classList.add('active');
       document.getElementById(front).classList.remove('active');
       front = back;
