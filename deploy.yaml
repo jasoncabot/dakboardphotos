@@ -18,7 +18,7 @@ services:
     restart: unless-stopped
     security_opt:
       - no-new-privileges:true
-    user: '568:568'
+    user: '3004:3004'
     volumes:
       - /mnt/tank/photosync/dakboard:/photos:ro
       - /mnt/fast/apps/dakboardphotos-state:/state
