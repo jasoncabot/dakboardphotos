@@ -1,0 +1,24 @@
+services:
+  dakboardphotos:
+    image: ghcr.io/jasoncabot/dakboardphotos:main
+    healthcheck:
+      interval: 30s
+      retries: 5
+      start_period: 30s
+      test:
+        - CMD
+        - wget
+        - '-q'
+        - '--spider'
+        - http://0.0.0.0:8080/
+      timeout: 5s
+    ports:
+      - 192.168.100.0:30103:8080
+    read_only: true
+    restart: unless-stopped
+    security_opt:
+      - no-new-privileges:true
+    user: '568:568'
+    volumes:
+      - /mnt/tank/photosync/dakboard:/photos:ro
+      - /mnt/fast/apps/dakboardphotos-state:/state
