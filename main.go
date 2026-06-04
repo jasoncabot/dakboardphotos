@@ -1,6 +1,7 @@
 package main
 
 import (
+	_ "embed"
 	"encoding/json"
 	"log"
 	"math/rand"
@@ -11,6 +12,9 @@ import (
 	"sync"
 	"time"
 )
+
+//go:embed index.html
+var indexHTML []byte
 
 var (
 	photosDir  = envOr("PHOTOS_DIR", "/photos")
@@ -67,7 +71,7 @@ func main() {
 
 func (s *server) handleIndex(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "text/html; charset=utf-8")
-	w.Write([]byte(indexHTML))
+	w.Write(indexHTML)
 }
 
 func (s *server) handlePhoto(w http.ResponseWriter, r *http.Request) {
@@ -229,57 +233,3 @@ func envOr(key, fallback string) string {
 	}
 	return fallback
 }
-
-const indexHTML = `<!DOCTYPE html>
-<html lang="en">
-<head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Photos</title>
-<style>
-  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
-  html, body { width: 100%; height: 100%; background: #000; overflow: hidden; }
-  .stage { position: relative; width: 100%; height: 100%; }
-  .slide {
-    position: absolute; inset: 0;
-    display: flex; align-items: center; justify-content: center;
-    opacity: 0; transition: opacity 1.5s ease-in-out;
-  }
-  .slide.active { opacity: 1; }
-  .slide img {
-    width: 100%; height: 100%;
-    object-fit: contain;
-  }
-</style>
-</head>
-<body>
-<div class="stage">
-  <div class="slide active" id="a"><img id="img-a" src="/photo" alt=""></div>
-  <div class="slide"        id="b"><img id="img-b" src=""       alt=""></div>
-</div>
-<script>
-  const INTERVAL_MS = 60 * 1000;
-  let front = 'a';
-
-  async function advance() {
-    const back = front === 'a' ? 'b' : 'a';
-    const backImg = document.getElementById('img-' + back);
-    try {
-      await new Promise((resolve, reject) => {
-        backImg.onload  = resolve;
-        backImg.onerror = reject;
-        backImg.src = '/photo?t=' + Date.now();
-      });
-      document.getElementById(back).classList.add('active');
-      document.getElementById(front).classList.remove('active');
-      front = back;
-    } catch (e) {
-      console.error('advance error', e);
-    }
-  }
-
-  setInterval(advance, INTERVAL_MS);
-</script>
-</body>
-</html>
-`

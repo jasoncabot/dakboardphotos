@@ -1,8 +1,8 @@
-FROM golang:1.22-alpine AS builder
+FROM golang:1.26-alpine AS builder
 WORKDIR /app
 COPY go.mod ./
 RUN go mod download
-COPY *.go ./
+COPY *.go *.html ./
 RUN CGO_ENABLED=0 GOOS=linux go build -ldflags="-s -w" -o server .
 
 FROM alpine:3.19

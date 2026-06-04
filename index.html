@@ -1,0 +1,126 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Photos</title>
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+  html, body { width: 100%; height: 100%; background: #000; overflow: hidden; }
+  .stage { position: relative; width: 100%; height: 100%; }
+  .slide {
+    position: absolute; inset: 0;
+    display: flex; align-items: center; justify-content: center;
+    opacity: 0; transition: opacity 1.5s ease-in-out;
+  }
+  .slide.active { opacity: 1; }
+  .slide-bg {
+    position: absolute; inset: -5%;
+    background-size: cover;
+    background-position: center;
+    filter: blur(24px);
+    z-index: 0;
+  }
+  .slide.portrait .slide-bg {
+    filter: blur(24px) brightness(0.6) saturate(0.5);
+  }
+  .slide img {
+    position: relative;
+    z-index: 1;
+    width: 100%; height: 100%;
+    object-fit: contain;
+    animation-timing-function: linear;
+    animation-fill-mode: forwards;
+  }
+
+  @keyframes kb-zoom-in {
+    from { transform: scale(1.0); }
+    to   { transform: scale(1.12); }
+  }
+  @keyframes kb-zoom-out {
+    from { transform: scale(1.12); }
+    to   { transform: scale(1.0); }
+  }
+  @keyframes kb-pan-right {
+    from { transform: scale(1.08) translateX(-3%); }
+    to   { transform: scale(1.08) translateX(3%); }
+  }
+  @keyframes kb-pan-left {
+    from { transform: scale(1.08) translateX(3%); }
+    to   { transform: scale(1.08) translateX(-3%); }
+  }
+  @keyframes kb-diagonal-tl {
+    from { transform: scale(1.05) translate(-2%, -2%); }
+    to   { transform: scale(1.1)  translate(2%,  2%); }
+  }
+  @keyframes kb-diagonal-br {
+    from { transform: scale(1.1)  translate(2%,  2%); }
+    to   { transform: scale(1.05) translate(-2%, -2%); }
+  }
+</style>
+</head>
+<body>
+<div class="stage">
+  <div class="slide active" id="a">
+    <div class="slide-bg" id="bg-a"></div>
+    <img id="img-a" src="/photo" alt="">
+  </div>
+  <div class="slide" id="b">
+    <div class="slide-bg" id="bg-b"></div>
+    <img id="img-b" src="" alt="">
+  </div>
+</div>
+<script>
+  const INTERVAL_MS = (parseInt(new URLSearchParams(location.search).get('interval'), 10) || 60) * 1000;
+  const KB_ANIMS = ['kb-zoom-in', 'kb-zoom-out', 'kb-pan-right', 'kb-pan-left', 'kb-diagonal-tl', 'kb-diagonal-br'];
+  let front = 'a';
+  let lastAnim = null;
+
+  function pickAnim() {
+    const choices = KB_ANIMS.filter(a => a !== lastAnim);
+    const anim = choices[Math.floor(Math.random() * choices.length)];
+    lastAnim = anim;
+    return anim;
+  }
+
+  function applySlide(id, url, img) {
+    document.getElementById('bg-' + id).style.backgroundImage = `url('${url}')`;
+
+    const slide = document.getElementById(id);
+    slide.classList.toggle('portrait', img.naturalHeight > img.naturalWidth);
+
+    img.style.animationDuration = (INTERVAL_MS / 1000 + 2) + 's';
+    img.style.animationName = 'none';
+    img.offsetHeight; // force reflow to restart animation
+    img.style.animationName = pickAnim();
+  }
+
+  window.addEventListener('load', () => {
+    const img = document.getElementById('img-a');
+    const apply = () => applySlide('a', img.src, img);
+    img.complete ? apply() : img.addEventListener('load', apply, { once: true });
+  });
+
+  async function advance() {
+    const back = front === 'a' ? 'b' : 'a';
+    const backImg = document.getElementById('img-' + back);
+    const url = '/photo?t=' + Date.now();
+    try {
+      await new Promise((resolve, reject) => {
+        backImg.onload  = resolve;
+        backImg.onerror = reject;
+        backImg.src = url;
+      });
+      applySlide(back, url, backImg);
+      document.getElementById(back).classList.add('active');
+      document.getElementById(front).classList.remove('active');
+      front = back;
+    } catch (e) {
+      console.error('advance error', e);
+    }
+  }
+
+  setInterval(advance, INTERVAL_MS);
+</script>
+</body>
+</html>

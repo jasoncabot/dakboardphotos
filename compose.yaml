@@ -1,0 +1,12 @@
+services:
+  photos:
+    build: .
+    ports:
+      - "8080:8080"
+    volumes:
+      - /mnt/tank/photosync/dakboard:/photos:ro
+      - photo-state:/state
+    restart: unless-stopped
+
+volumes:
+  photo-state:
