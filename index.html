@@ -89,7 +89,7 @@
     const slide = document.getElementById(id);
     slide.classList.toggle('portrait', img.naturalHeight > img.naturalWidth);
 
-    img.style.animationDuration = (INTERVAL_MS / 1000 + 2) + 's';
+    img.style.animationDuration = Math.min(INTERVAL_MS / 1000 + 2, 15) + 's';
     img.style.animationName = 'none';
     img.offsetHeight; // force reflow to restart animation
     img.style.animationName = pickAnim();
