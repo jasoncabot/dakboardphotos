@@ -41,6 +41,8 @@ func activeSubfolder() string {
 		return "kirsty"
 	case m == 2 && d == 19:
 		return "lan"
+	case m == 7 && d == 31:
+		return "anniversary"
 	default:
 		return "default"
 	}
